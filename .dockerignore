@@ -1,0 +1,17 @@
+# keep the docker build context lean (used by tools/video2splat/Dockerfile,
+# which is built from the repo root)
+build/
+build*/
+dist/
+out/
+.vs/
+.vscode/
+.idea/
+.cache/
+tools/video2splat/jobs/
+tools/video2splat/__pycache__/
+**/__pycache__/
+*.ply
+*.mp4
+*.mov
+*.mkv
