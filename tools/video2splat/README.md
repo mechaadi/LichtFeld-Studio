@@ -61,11 +61,16 @@ docker run --rm --gpus all -p 6080:6080 -v splat-jobs:/data/jobs \
 # then open http://localhost:6080/vnc.html
 ```
 
-Resolution via `-e GUI_RESOLUTION=2560x1440` (default 1920x1080). Rendering
-uses Mesa's software/translated Vulkan inside the container (no native NVIDIA
-Vulkan under WSL), and VNC adds encoding latency — good for inspecting scenes
-and using the editor, not for fluid 60 fps navigation. On a native Linux host
-it performs notably better.
+Resolution via `-e GUI_RESOLUTION=2560x1440` (default 1920x1080).
+
+**Requires a native Linux host with the NVIDIA container toolkit** (which
+injects the NVIDIA Vulkan driver): LichtFeld's renderer needs CUDA↔Vulkan
+external-semaphore interop, which only the native NVIDIA ICD provides.
+**This does not work under Docker Desktop on Windows/WSL** — containers there
+get no NVIDIA Vulkan driver, and Mesa's llvmpipe fails LichtFeld's interop
+check ("Vulkan external timeline-semaphore interop is required"). On Windows,
+view results with the native Windows LichtFeld build instead: download the
+PLY (`GET /jobs/<id>/result`) and open it with `build\LichtFeld-Studio.exe`.
 
 ### GUI mode (native display)
 

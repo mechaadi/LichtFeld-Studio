@@ -24,6 +24,8 @@ case "$cmd" in
         Xvfb :99 -screen 0 "${res}x24" &
         i=0; while [ ! -e /tmp/.X11-unix/X99 ] && [ $i -lt 50 ]; do sleep 0.2; i=$((i+1)); done
         export DISPLAY=:99
+        export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp/xdg}"
+        mkdir -p "$XDG_RUNTIME_DIR" && chmod 700 "$XDG_RUNTIME_DIR"
         x11vnc -display :99 -forever -shared -nopw -quiet -bg
         websockify --web /usr/share/novnc 6080 localhost:5900 &
         echo "noVNC ready: open http://localhost:6080/vnc.html"
