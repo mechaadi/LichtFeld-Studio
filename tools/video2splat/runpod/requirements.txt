@@ -1,0 +1,3 @@
+# The base image already provides the pipeline's runtime (ffmpeg, COLMAP,
+# LichtFeld, and pipeline.py). The RunPod worker only adds the SDK.
+runpod>=1.6

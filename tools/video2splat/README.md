@@ -102,6 +102,14 @@ Notes:
   build of LichtFeld Studio is the better viewer on this machine.
 - Any other first argument is exec'd verbatim (e.g. `docker run -it video2splat sh`).
 
+## RunPod (serverless)
+
+A RunPod serverless worker — send a video **or** an image sequence, get a `.ply`
+back — lives in [runpod/](runpod/). It builds as a thin layer on top of this
+image and reuses the identical ffmpeg → COLMAP → LichtFeld pipeline. Build,
+deploy, and the input/output schema are documented in
+[runpod/README.md](runpod/README.md).
+
 ## Usage
 
 ```sh

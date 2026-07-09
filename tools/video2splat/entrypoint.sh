@@ -7,6 +7,7 @@
 #   gui-web [args...]  launch the GUI on a virtual display, streamed to the
 #                      browser via noVNC on :6080 (GUI_RESOLUTION=1920x1080)
 #   anything else      exec'd verbatim (e.g. `sh` for debugging)
+# For the RunPod serverless worker, see tools/video2splat/runpod/.
 set -e
 cmd="${1:-api}"
 case "$cmd" in

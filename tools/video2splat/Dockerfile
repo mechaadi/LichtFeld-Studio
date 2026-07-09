@@ -52,15 +52,17 @@ RUN apt-get update && apt-get install -y ca-certificates gpg wget && \
                         --slave /usr/bin/g++ g++ /usr/bin/g++-14 && \
     rm -rf /var/lib/apt/lists/*
 
-# full clone: manifest-mode baseline resolution needs the vcpkg git history
+# full clone: manifest-mode baseline resolution needs the vcpkg git history.
+# Pin per-port build parallelism in the triplet. 0 => resolve to nproc: inside
+# cgroup-limited containers std::thread::hardware_concurrency() can report 0,
+# which recent vcpkg treats as a hard error ("VCPKG_MAX_CONCURRENCY is 0").
 ARG VCPKG_MAX_CONCURRENCY
 RUN git clone https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT" && \
     "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics && \
     printf 'set(VCPKG_BUILD_TYPE release)\n' >> "$VCPKG_ROOT/triplets/x64-linux.cmake" && \
-    if [ "$VCPKG_MAX_CONCURRENCY" != "0" ]; then \
-      printf 'set(VCPKG_MAX_CONCURRENCY %s)\n' "$VCPKG_MAX_CONCURRENCY" \
-        >> "$VCPKG_ROOT/triplets/x64-linux.cmake"; \
-    fi
+    CONC="$VCPKG_MAX_CONCURRENCY"; [ "$CONC" = "0" ] && CONC="$(nproc 2>/dev/null || echo 1)"; \
+    case "$CONC" in ''|*[!0-9]*) CONC=1;; esac; \
+    printf 'set(VCPKG_MAX_CONCURRENCY %s)\n' "$CONC" >> "$VCPKG_ROOT/triplets/x64-linux.cmake"
 
 WORKDIR /src
 
@@ -78,6 +80,9 @@ COPY tools/video2splat/vcpkg-seed/ /vcpkg-seed/
 RUN --mount=type=cache,target=/vcpkg-cache \
     --mount=type=cache,target=/opt/vcpkg/downloads \
     cp -n /vcpkg-seed/* "$VCPKG_ROOT/downloads/" 2>/dev/null; \
+    CONC="$VCPKG_MAX_CONCURRENCY"; [ "$CONC" = "0" ] && CONC="$(nproc 2>/dev/null || echo 1)"; \
+    case "$CONC" in ''|*[!0-9]*) CONC=1;; esac; \
+    export VCPKG_MAX_CONCURRENCY="$CONC"; \
     ok=0; \
     for i in 1 2 3; do \
       if "$VCPKG_ROOT/vcpkg" install --triplet x64-linux; then ok=1; break; fi; \
@@ -94,9 +99,13 @@ RUN if [ -d .git ]; then \
 # LFS_ENFORCE_LINUX_GUI_BACKENDS=OFF: skip the display-backend preflight; the
 # container only ever runs with --headless
 ARG BUILD_JOBS
+ARG VCPKG_MAX_CONCURRENCY
 RUN --mount=type=cache,target=/vcpkg-cache \
     --mount=type=cache,target=/opt/vcpkg/downloads \
     JOBS="$BUILD_JOBS"; [ "$JOBS" = "0" ] && JOBS="$(nproc)"; \
+    CONC="$VCPKG_MAX_CONCURRENCY"; [ "$CONC" = "0" ] && CONC="$(nproc 2>/dev/null || echo 1)"; \
+    case "$CONC" in ''|*[!0-9]*) CONC=1;; esac; \
+    export VCPKG_MAX_CONCURRENCY="$CONC"; \
     cmake -B build -S . -G Ninja \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc \
